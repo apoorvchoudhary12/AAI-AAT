@@ -1,0 +1,68 @@
+from ortools.linear_solver import pywraplp
+import random
+import matplotlib.pyplot as plt
+
+def simulate_fortune_wheel():
+  
+    sectors = ['A', 'B', 'C', 'D']
+    probabilities = [0.4, 0.3, 0.2, 0.1]
+
+    
+    solver = pywraplp.Solver.CreateSolver('GLOP')
+
+    decisions = []
+    for _ in range(len(sectors)):
+        decisions.append(solver.BoolVar(''))
+
+   
+    objective = solver.Objective()
+    for i in range(len(sectors)):
+        objective.SetCoefficient(decisions[i], probabilities[i])
+    objective.SetMaximization()
+
+  
+    constraint = solver.Constraint(1, 1)
+    for i in range(len(sectors)):
+        constraint.SetCoefficient(decisions[i], 1)
+
+    solver.Solve()
+
+   
+    selected_sector = random.choice([sectors[i] for i in range(len(sectors)) if decisions[i].solution_value() == 1])
+
+    return selected_sector
+
+
+num_simulations = 1000
+results = {}
+
+for _ in range(num_simulations):
+    sector = simulate_fortune_wheel()
+    if sector in results:
+        results[sector] += 1
+    else:
+        results[sector] = 1
+
+
+for sector, count in results.items():
+    probability = count / num_simulations
+    print(f"Sector {sector}: Probability = {probability:.2f}")
+
+
+winner = max(results, key=results.get)
+print(f"Winner: Sector {winner}")
+
+
+plt.bar(results.keys(), results.values())
+plt.xlabel('Sector')
+plt.ylabel('Count')
+plt.title('Fortune Wheel Simulation Results')
+plt.show()
+
+
+expected_value = sum([probabilities[i] * count / num_simulations for i, count in enumerate(results.values())])
+print(f"Expected Value: {expected_value:.2f}")
+
+
+entropy = -sum([probability * math.log2(probability) for probability in results.values() if probability > 0])
+print(f"Entropy: {entropy:.2f}")
